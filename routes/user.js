@@ -41,7 +41,7 @@ router.delete("/:id", verifyTokenAndAuth, (req, res) => {
 // GET A USER
 
 router.get("/find/:id", verifyTokenAndAdmin, (req, res) => {
-  User.findByIdAndDelete(req.params.id)
+  User.findById(req.params.id)
     .then((user) => {
       const { password, ...others } = user._doc;
       res.status(200).json(others);

@@ -8,89 +8,78 @@ const CryptoJS = require("crypto-js");
 
 const router = require("express").Router();
 
-// CREATE 
+// CREATE
 
-router.post("/", )
+router.post("/", verifyTokenAndAdmin, async (req, res) => {
+  const newProduct = new Product(req.body);
 
-// // UPDATE
-// router.put("/:id", verifyTokenAndAuth, (req, res) => {
-//   if (req.body.password) {
-//     req.body.password = CryptoJS.AES.encrypt(
-//       req.body.password,
-//       process.env.SECRET_PASSWORD
-//     ).toString();
+  newProduct
+    .save()
+    .then((product) => {
+      res.status(200).json(product);
+    })
+    .catch((err) => res.status(500).json(err));
+});
 
-//     User.findByIdAndUpdate(
-//       req.params.id,
-//       {
-//         $set: req.body,
-//       },
-//       { new: true }
-//     )
-//       .then((updatedUser) => {
-//         res.status(200).json(updatedUser);
-//       })
-//       .catch((err) => res.status(500).json(err));
-//   }
-// });
+// UPDATE
+router.put("/:id", verifyTokenAndAdmin, (req, res) => {
+  Product.findByIdAndUpdate(
+    req.params.id,
+    {
+      $set: req.body,
+    },
+    { new: true }
+  )
+    .then((updatedProduct) => {
+      res.status(200).json(updatedProduct);
+    })
+    .catch((err) => res.status(500).json(err));
+});
 
-// // DELETE
+// DELETE
 
-// router.delete("/:id", verifyTokenAndAuth, (req, res) => {
-//   User.findByIdAndDelete(req.params.id)
-//     .then(() => res.status(200).json("User deleted successfully"))
-//     .catch((err) => res.status(500).json(err));
-// });
+router.delete("/:id", verifyTokenAndAdmin, (req, res) => {
+  Product.findByIdAndDelete(req.params.id)
+    .then(() => res.status(200).json("Product deleted successfully"))
+    .catch((err) => res.status(500).json(err));
+});
 
-// // GET A USER
+// GET A PRODUCT
 
-// router.get("/find/:id", verifyTokenAndAdmin, (req, res) => {
-//   User.findByIdAndDelete(req.params.id)
-//     .then((user) => {
-//       const { password, ...others } = user._doc;
-//       res.status(200).json(others);
-//     })
-//     .catch((err) => res.status(500).json(err));
-// });
+router.get("/find/:id", (req, res) => {
+  Product.findById(req.params.id)
+    .then((product) => {
+      res.status(200).json(product);
+    })
+    .catch((err) => res.status(500).json(err));
+});
 
-// // GET ALL EXISTING USERS
+// GET ALL EXISTING PRODUCTS
 
-// router.get("/", verifyTokenAndAdmin, (req, res) => {
-//   const query = req.query.new;
+router.get("/", (req, res) => {
+  const queryNew = req.query.new;
+  const queryCategory = req.query.category;
 
-//   const userPromise = query
-//     ? User.find().sort({ _id: -1 }).limit(5)
-//     : User.find();
+  let productPromise;
 
-//   userPromise
-//     .then((users) => {
-//       res.status(200).json(users);
-//     })
-//     .catch((err) => res.status(500).json(err));
-// });
+  if (queryNew) {
+    productPromise = Product.find().sort({ createdAt: -1 }).limit(5);
+  } else if (queryCategory) {
+    productPromise = Product.find({
+      categories: {
+        $in: [queryCategory],
+      },
+    });
+  } else {
+    productPromise = Product.find()
+  }
 
-// // GET USER STATS
+  productPromise
+    .then((products) => {
+      res.status(200).json(products);
+    })
+    .catch((err) => res.status(500).json(err));
+});
 
-// router.get("/stats", verifyTokenAndAdmin, (req, res) => {
-//   const date = new Date();
-//   const lastYear = new Date(date.setFullYear(date.getFullYear() - 1));
-
-//   // 1. first match all data that has createdAt as greater than last year
-//   // 2. set a month key with the createdAt month that's being sent
-//   // 3. group them by setting an _id to the month (e.g november ) and also sum all the users gathered for the particular month
-//   User.aggregate([
-//     { $match: { createdAt: { $gte: lastYear } } },
-//     {
-//       $project: {
-//         month: { $month: "$createdAt" },
-//       },
-//     },
-//     { $group: { _id: "$month", total: { $sum: 1 } } },
-//   ])
-//     .then((data) => {
-//       res.status(200).json(data);
-//     })
-//     .catch((err) => res.status(500).json(err));
-// });
 
 module.exports = router;
